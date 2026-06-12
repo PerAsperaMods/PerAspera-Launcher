@@ -1,0 +1,135 @@
+<Window x:Class="PerAsperaLauncher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Per Aspera Mod Launcher"
+        Width="780" Height="600" MinWidth="640" MinHeight="480"
+        Background="{StaticResource BgBrush}"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>  <!-- titre -->
+            <RowDefinition Height="Auto"/>  <!-- statuts jeu/bepinex/sdk -->
+            <RowDefinition Height="Auto"/>  <!-- entete mods -->
+            <RowDefinition Height="*"/>     <!-- liste mods -->
+            <RowDefinition Height="Auto"/>  <!-- barre statut -->
+            <RowDefinition Height="Auto"/>  <!-- footer boutons -->
+        </Grid.RowDefinitions>
+
+        <!-- Titre -->
+        <TextBlock Grid.Row="0" Text="PER ASPERA — MOD LAUNCHER"
+                   FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"
+                   Margin="0,0,0,12"/>
+
+        <!-- Panneau statuts -->
+        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="90"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Jeu -->
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Jeu" Style="{StaticResource DimText}" Margin="0,4"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding GamePathDisplay}" Margin="0,4"
+                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <Button Grid.Row="0" Grid.Column="2" Content="Parcourir…" Style="{StaticResource ActionButton}"
+                        Command="{Binding BrowseGameCommand}" Margin="8,2"/>
+
+                <!-- BepInEx -->
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="BepInEx" Style="{StaticResource DimText}" Margin="0,4"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BepInExStatus}" Margin="0,4" VerticalAlignment="Center"/>
+                <Button Grid.Row="1" Grid.Column="2" Content="Installer" Style="{StaticResource ActionButton}"
+                        Command="{Binding InstallBepInExCommand}" Margin="8,2"/>
+
+                <!-- SDK -->
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="SDK" Style="{StaticResource DimText}" Margin="0,4"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SdkStatus}" Margin="0,4" VerticalAlignment="Center"/>
+                <Button Grid.Row="2" Grid.Column="2" Content="Installer / MAJ" Style="{StaticResource ActionButton}"
+                        Command="{Binding InstallSdkCommand}" Margin="8,2"/>
+            </Grid>
+        </Border>
+
+        <!-- Entête liste mods -->
+        <TextBlock Grid.Row="2" Text="MODS DISPONIBLES" FontWeight="SemiBold"
+                   Foreground="{StaticResource TextDimBrush}" Margin="2,0,0,6"/>
+
+        <!-- Liste mods -->
+        <Border Grid.Row="3" Background="{StaticResource PanelBrush}" CornerRadius="6">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                <ItemsControl ItemsSource="{Binding Mods}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{StaticResource PanelLightBrush}" CornerRadius="5"
+                                    Padding="12,8" Margin="4">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
+                                            <Border Background="#FF4A3A30" CornerRadius="3" Padding="5,1" Margin="8,0,0,0"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding TypeBadge}" FontSize="10"
+                                                           Foreground="{StaticResource WarnBrush}"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding Description}" Style="{StaticResource DimText}"
+                                                   FontSize="12" TextWrapping="Wrap" Margin="0,3,8,0"/>
+                                    </StackPanel>
+
+                                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
+                                               Margin="8,0" FontSize="12"/>
+
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Button Content="{Binding InstallButtonText}" Style="{StaticResource PrimaryButton}"
+                                                Command="{Binding InstallCommand}" Margin="4,0"/>
+                                        <Button Content="✕" Style="{StaticResource ActionButton}" ToolTip="Désinstaller"
+                                                Command="{Binding UninstallCommand}" Margin="4,0" Padding="8,5"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- Barre de statut + progression -->
+        <Grid Grid.Row="4" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="200"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Style="{StaticResource DimText}"
+                       FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+            <ProgressBar Grid.Column="1" Height="6" Value="{Binding ProgressValue}" Maximum="100"
+                         Visibility="{Binding ProgressVisible, Converter={StaticResource BoolToVis}}"
+                         Background="{StaticResource PanelLightBrush}" Foreground="{StaticResource AccentBrush}"
+                         BorderThickness="0"/>
+        </Grid>
+
+        <!-- Footer -->
+        <Grid Grid.Row="5" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Content="Tout mettre à jour" Style="{StaticResource ActionButton}"
+                    Command="{Binding UpdateAllCommand}" Padding="14,8"/>
+            <Button Grid.Column="2" Content="▶  JOUER" Style="{StaticResource PrimaryButton}"
+                    Command="{Binding PlayCommand}" Padding="28,8" FontSize="15"/>
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>PerAsperaLauncher</AssemblyName>
+    <RootNamespace>PerAsperaLauncher</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>PerAsperaMods</Authors>
+    <Product>Per Aspera Mod Launcher</Product>
+    <Description>Installe et met a jour BepInEx, le SDK et les mods Per Aspera depuis l'org GitHub PerAsperaMods.</Description>
+    <!-- publish : dotnet publish -c Release -r win-x64 (self-contained single-file, voir release.yml) -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+</Project>
