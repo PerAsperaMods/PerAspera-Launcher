@@ -1,0 +1,2 @@
+<!-- Standalone project — stop MSBuild from inheriting root workspace targets (game DLL references, deploy targets) -->
+<Project />

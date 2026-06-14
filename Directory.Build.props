@@ -1,0 +1,2 @@
+<!-- Standalone project — stop MSBuild from inheriting root workspace props (game DLLs, publicizer, BepInEx NuGet sources) -->
+<Project />
