@@ -18,19 +18,18 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Publish (self-contained single-file)
+      - name: Publish (self-contained folder — évite le faux-positif Defender sur single-file)
         shell: pwsh
         run: |
           dotnet publish src/PerAsperaLauncher/PerAsperaLauncher.csproj `
             -c Release -r win-x64 --self-contained `
-            -p:PublishSingleFile=true `
             -o publish
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Package
         shell: pwsh
         run: |
-          Compress-Archive -Path publish\PerAsperaLauncher.exe -DestinationPath "PerAsperaLauncher-$env:GITHUB_REF_NAME.zip"
+          Compress-Archive -Path publish\* -DestinationPath "PerAsperaLauncher-$env:GITHUB_REF_NAME.zip"
           Get-ChildItem *.zip | ForEach-Object { Write-Host "$($_.Name) ($([math]::Round($_.Length/1MB,1)) MB)" }
 
       - name: Create release
