@@ -6,6 +6,8 @@ namespace PerAsperaLauncher.Models;
 public sealed class LauncherConfig
 {
     public string? GamePath { get; set; }
+    public bool AdvancedMode { get; set; }
+    public string? LastWorkspacePath { get; set; }
 }
 
 /// <summary>Racine de registry.json (repo PerAsperaMods/mod-registry).</summary>

@@ -2,125 +2,291 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Per Aspera Mod Launcher"
-        Width="780" Height="600" MinWidth="640" MinHeight="480"
+        Width="780" Height="620" MinWidth="640" MinHeight="500"
         Background="{StaticResource BgBrush}"
         WindowStartupLocation="CenterScreen">
 
+    <Window.Resources>
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource TextDimBrush}"/>
+            <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="14,6"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                CornerRadius="4,4,0,0" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PanelLightBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DevTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource PanelLightBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="#FF4A3A30"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,5"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource AccentBrush}"/>
+        </Style>
+    </Window.Resources>
+
     <Grid Margin="16">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- titre -->
-            <RowDefinition Height="Auto"/>  <!-- statuts jeu/bepinex/sdk -->
-            <RowDefinition Height="Auto"/>  <!-- entete mods -->
-            <RowDefinition Height="*"/>     <!-- liste mods -->
-            <RowDefinition Height="Auto"/>  <!-- barre statut -->
-            <RowDefinition Height="Auto"/>  <!-- footer boutons -->
+            <RowDefinition Height="Auto"/>   <!-- titre + toggle avancé -->
+            <RowDefinition Height="*"/>      <!-- TabControl -->
+            <RowDefinition Height="Auto"/>   <!-- footer : Update + Jouer -->
         </Grid.RowDefinitions>
 
-        <!-- Titre -->
-        <TextBlock Grid.Row="0" Text="PER ASPERA — MOD LAUNCHER"
-                   FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"
-                   Margin="0,0,0,12"/>
-
-        <!-- Panneau statuts -->
-        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" CornerRadius="6" Padding="12" Margin="0,0,0,12">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="90"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <!-- Jeu -->
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Jeu" Style="{StaticResource DimText}" Margin="0,4"/>
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding GamePathDisplay}" Margin="0,4"
-                           TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                <Button Grid.Row="0" Grid.Column="2" Content="Parcourir…" Style="{StaticResource ActionButton}"
-                        Command="{Binding BrowseGameCommand}" Margin="8,2"/>
-
-                <!-- BepInEx -->
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="BepInEx" Style="{StaticResource DimText}" Margin="0,4"/>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BepInExStatus}" Margin="0,4" VerticalAlignment="Center"/>
-                <Button Grid.Row="1" Grid.Column="2" Content="Installer" Style="{StaticResource ActionButton}"
-                        Command="{Binding InstallBepInExCommand}" Margin="8,2"/>
-
-                <!-- SDK -->
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="SDK" Style="{StaticResource DimText}" Margin="0,4"/>
-                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SdkStatus}" Margin="0,4" VerticalAlignment="Center"/>
-                <Button Grid.Row="2" Grid.Column="2" Content="Installer / MAJ" Style="{StaticResource ActionButton}"
-                        Command="{Binding InstallSdkCommand}" Margin="8,2"/>
-            </Grid>
-        </Border>
-
-        <!-- Entête liste mods -->
-        <TextBlock Grid.Row="2" Text="MODS DISPONIBLES" FontWeight="SemiBold"
-                   Foreground="{StaticResource TextDimBrush}" Margin="2,0,0,6"/>
-
-        <!-- Liste mods -->
-        <Border Grid.Row="3" Background="{StaticResource PanelBrush}" CornerRadius="6">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
-                <ItemsControl ItemsSource="{Binding Mods}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="{StaticResource PanelLightBrush}" CornerRadius="5"
-                                    Padding="12,8" Margin="4">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
-                                            <Border Background="#FF4A3A30" CornerRadius="3" Padding="5,1" Margin="8,0,0,0"
-                                                    VerticalAlignment="Center">
-                                                <TextBlock Text="{Binding TypeBadge}" FontSize="10"
-                                                           Foreground="{StaticResource WarnBrush}"/>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Text="{Binding Description}" Style="{StaticResource DimText}"
-                                                   FontSize="12" TextWrapping="Wrap" Margin="0,3,8,0"/>
-                                    </StackPanel>
-
-                                    <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
-                                               Margin="8,0" FontSize="12"/>
-
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Content="{Binding InstallButtonText}" Style="{StaticResource PrimaryButton}"
-                                                Command="{Binding InstallCommand}" Margin="4,0"/>
-                                        <Button Content="✕" Style="{StaticResource ActionButton}" ToolTip="Désinstaller"
-                                                Command="{Binding UninstallCommand}" Margin="4,0" Padding="8,5"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-        </Border>
-
-        <!-- Barre de statut + progression -->
-        <Grid Grid.Row="4" Margin="0,10,0,0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="200"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Style="{StaticResource DimText}"
-                       FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-            <ProgressBar Grid.Column="1" Height="6" Value="{Binding ProgressValue}" Maximum="100"
-                         Visibility="{Binding ProgressVisible, Converter={StaticResource BoolToVis}}"
-                         Background="{StaticResource PanelLightBrush}" Foreground="{StaticResource AccentBrush}"
-                         BorderThickness="0"/>
+        <!-- ═══ En-tête ════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock Text="PER ASPERA — MOD LAUNCHER"
+                       FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"
+                       VerticalAlignment="Center"/>
+            <CheckBox HorizontalAlignment="Right" VerticalAlignment="Center"
+                      Content="Mode développeur"
+                      Foreground="{StaticResource TextDimBrush}"
+                      IsChecked="{Binding AdvancedMode}"/>
         </Grid>
 
-        <!-- Footer -->
-        <Grid Grid.Row="5" Margin="0,12,0,0">
+        <!-- ═══ Onglets ═════════════════════════════════════════════════════════ -->
+        <TabControl Grid.Row="1">
+
+            <!-- ─── Onglet Mods ─────────────────────────────────────────────── -->
+            <TabItem Header="Mods">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>  <!-- statuts jeu/bepinex/sdk -->
+                        <RowDefinition Height="Auto"/>  <!-- entête mods -->
+                        <RowDefinition Height="*"/>     <!-- liste mods -->
+                        <RowDefinition Height="Auto"/>  <!-- barre statut + progression -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Panneau statuts -->
+                    <Border Grid.Row="0" Background="{StaticResource PanelBrush}" CornerRadius="6"
+                            Padding="12" Margin="0,8,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Jeu -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Jeu" Style="{StaticResource DimText}" Margin="0,4"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding GamePathDisplay}" Margin="0,4"
+                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                            <Button Grid.Row="0" Grid.Column="2" Content="Parcourir…" Style="{StaticResource ActionButton}"
+                                    Command="{Binding BrowseGameCommand}" Margin="8,2"/>
+
+                            <!-- BepInEx -->
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="BepInEx" Style="{StaticResource DimText}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BepInExStatus}" Margin="0,4" VerticalAlignment="Center"/>
+                            <Button Grid.Row="1" Grid.Column="2" Content="Installer" Style="{StaticResource ActionButton}"
+                                    Command="{Binding InstallBepInExCommand}" Margin="8,2"/>
+
+                            <!-- SDK -->
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="SDK" Style="{StaticResource DimText}" Margin="0,4"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SdkStatus}" Margin="0,4" VerticalAlignment="Center"/>
+                            <Button Grid.Row="2" Grid.Column="2" Content="Installer / MAJ" Style="{StaticResource ActionButton}"
+                                    Command="{Binding InstallSdkCommand}" Margin="8,2"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Entête liste mods -->
+                    <TextBlock Grid.Row="1" Text="MODS DISPONIBLES" FontWeight="SemiBold"
+                               Foreground="{StaticResource TextDimBrush}" Margin="2,0,0,6"/>
+
+                    <!-- Liste mods -->
+                    <Border Grid.Row="2" Background="{StaticResource PanelBrush}" CornerRadius="6">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8">
+                            <ItemsControl ItemsSource="{Binding Mods}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="{StaticResource PanelLightBrush}" CornerRadius="5"
+                                                Padding="12,8" Margin="4">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
+                                                        <Border Background="#FF4A3A30" CornerRadius="3" Padding="5,1"
+                                                                Margin="8,0,0,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding TypeBadge}" FontSize="10"
+                                                                       Foreground="{StaticResource WarnBrush}"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Description}" Style="{StaticResource DimText}"
+                                                               FontSize="12" TextWrapping="Wrap" Margin="0,3,8,0"/>
+                                                </StackPanel>
+
+                                                <TextBlock Grid.Column="1" Text="{Binding StatusText}" VerticalAlignment="Center"
+                                                           Margin="8,0" FontSize="12"/>
+
+                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <Button Content="{Binding InstallButtonText}" Style="{StaticResource PrimaryButton}"
+                                                            Command="{Binding InstallCommand}" Margin="4,0"/>
+                                                    <Button Content="✕" Style="{StaticResource ActionButton}" ToolTip="Désinstaller"
+                                                            Command="{Binding UninstallCommand}" Margin="4,0" Padding="8,5"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Border>
+
+                    <!-- Barre statut + progression -->
+                    <Grid Grid.Row="3" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" Style="{StaticResource DimText}"
+                                   FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <ProgressBar Grid.Column="1" Height="6" Value="{Binding ProgressValue}" Maximum="100"
+                                     Visibility="{Binding ProgressVisible, Converter={StaticResource BoolToVis}}"
+                                     Background="{StaticResource PanelLightBrush}" Foreground="{StaticResource AccentBrush}"
+                                     BorderThickness="0"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ─── Onglet Développeur ───────────────────────────────────────── -->
+            <TabItem Header="Développeur"
+                     Visibility="{Binding AdvancedMode, Converter={StaticResource BoolToVis}}">
+                <Grid Margin="0,8,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>  <!-- workspace -->
+                        <RowDefinition Height="Auto"/>  <!-- nouveau mod -->
+                        <RowDefinition Height="*"/>     <!-- spacer -->
+                        <RowDefinition Height="Auto"/>  <!-- statut workspace -->
+                    </Grid.RowDefinitions>
+
+                    <!-- === Workspace Claude Code === -->
+                    <Border Grid.Row="0" Background="{StaticResource PanelBrush}" CornerRadius="6"
+                            Padding="12" Margin="0,0,0,12">
+                        <StackPanel>
+                            <TextBlock Text="WORKSPACE CLAUDE CODE" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,10"/>
+
+                            <!-- Chemin workspace -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox Grid.Column="0" Style="{StaticResource DevTextBox}"
+                                         Text="{Binding Workspace.WorkspacePath, UpdateSourceTrigger=PropertyChanged}"/>
+                                <Button Grid.Column="1" Content="Parcourir…" Style="{StaticResource ActionButton}"
+                                        Command="{Binding Workspace.BrowseWorkspaceCommand}" Margin="6,0,0,0"/>
+                            </Grid>
+
+                            <!-- Actions workspace -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="Initialiser le workspace" Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding Workspace.InitWorkspaceCommand}"
+                                        Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="Mettre à jour les skills" Style="{StaticResource ActionButton}"
+                                        Command="{Binding Workspace.UpdateSkillsCommand}" Padding="14,7"/>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource DimText}" FontSize="11" TextWrapping="Wrap">
+                                Installe .claude/skills/ + .claude/agents/ depuis PerAsperaMods/per-aspera-skills.
+                                Fonctionne dans VSCode, CLI et l'app desktop Claude Code.
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- === Nouveau mod === -->
+                    <Border Grid.Row="1" Background="{StaticResource PanelBrush}" CornerRadius="6"
+                            Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="NOUVEAU MOD" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,10"/>
+
+                            <!-- ID du mod -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="ID du mod" Style="{StaticResource DimText}"
+                                           VerticalAlignment="Center"/>
+                                <TextBox Grid.Column="1" Style="{StaticResource DevTextBox}"
+                                         Text="{Binding Workspace.ModIdInput, UpdateSourceTrigger=PropertyChanged}"/>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Content="+ Mod YAML" Style="{StaticResource ActionButton}"
+                                        Command="{Binding Workspace.NewYamlModCommand}"
+                                        Padding="14,7" Margin="0,0,8,0"/>
+                                <Button Content="+ Plugin C#" Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding Workspace.NewCSharpModCommand}" Padding="14,7"/>
+                            </StackPanel>
+
+                            <TextBlock Style="{StaticResource DimText}" FontSize="11" TextWrapping="Wrap">
+                                Plugin C# : télécharge aussi le SDK modder-pack dans lib/SDK/ (compilation immédiate sans config manuelle).
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Barre statut workspace -->
+                    <Grid Grid.Row="3" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="200"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="{Binding Workspace.StatusMessage}" Style="{StaticResource DimText}"
+                                   FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <ProgressBar Grid.Column="1" Height="6" Value="{Binding Workspace.ProgressValue}" Maximum="100"
+                                     Visibility="{Binding Workspace.ProgressVisible, Converter={StaticResource BoolToVis}}"
+                                     Background="{StaticResource PanelLightBrush}" Foreground="{StaticResource AccentBrush}"
+                                     BorderThickness="0"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+
+        <!-- ═══ Footer ══════════════════════════════════════════════════════════ -->
+        <Grid Grid.Row="2" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>

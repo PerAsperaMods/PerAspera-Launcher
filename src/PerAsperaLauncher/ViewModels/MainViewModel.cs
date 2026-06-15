@@ -22,12 +22,31 @@ public sealed class MainViewModel : ObservableObject
 
     public MainViewModel()
     {
+        Workspace = new WorkspaceViewModel(() => GamePath, path =>
+        {
+            _config.LastWorkspacePath = path;
+            ConfigService.Save(_config);
+        });
         BrowseGameCommand = new RelayCommand(BrowseGame);
         InstallBepInExCommand = new AsyncRelayCommand(InstallBepInExAsync, () => GameFound && !BepInExInstalled);
         InstallSdkCommand = new AsyncRelayCommand(InstallSdkAsync, () => GameFound && BepInExInstalled && SdkUpdateAvailable);
         UpdateAllCommand = new AsyncRelayCommand(UpdateAllAsync, () => GameFound);
         PlayCommand = new RelayCommand(Play, () => GameFound);
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
+    }
+
+    public WorkspaceViewModel Workspace { get; }
+
+    public bool AdvancedMode
+    {
+        get => _config.AdvancedMode;
+        set
+        {
+            if (_config.AdvancedMode == value) return;
+            _config.AdvancedMode = value;
+            ConfigService.Save(_config);
+            OnPropertyChanged();
+        }
     }
 
     // ----- Propriétés liées -----
@@ -103,6 +122,10 @@ public sealed class MainViewModel : ObservableObject
     public async Task LoadAsync()
     {
         _config = ConfigService.Load();
+
+        // Restaurer le workspace si mémorisé
+        if (!string.IsNullOrWhiteSpace(_config.LastWorkspacePath))
+            Workspace.WorkspacePath = _config.LastWorkspacePath;
 
         // 1) Localiser le jeu : config persistée, sinon auto-détection Steam
         var path = GameLocator.IsValidGamePath(_config.GamePath) ? _config.GamePath : GameLocator.AutoDetect();
