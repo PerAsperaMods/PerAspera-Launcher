@@ -30,7 +30,7 @@ public static class ModManager
     }
 
     public static async Task<GitHubRelease?> GetLatestAsync(ModEntry mod, bool includePreRelease = false)
-        => await GitHubClient.GetLatestReleaseAsync(mod.Repo, includePreRelease);
+        => await GitHubClient.GetLatestReleaseAsync(mod.Repo, includePreRelease || mod.PreRelease);
 
     public static async Task InstallAsync(string gamePath, ModEntry mod, GitHubRelease release,
         IProgress<int>? progress = null)

@@ -37,6 +37,9 @@ public sealed class ModEntry
     [JsonPropertyName("sdkMinVersion")] public string? SdkMinVersion { get; set; }
     [JsonPropertyName("gameVersion")] public string? GameVersion { get; set; }
     [JsonPropertyName("dependencies")] public List<string> Dependencies { get; set; } = new();
+    /// <summary>Si true, la dernière release est toujours cherchée parmi les pre-releases
+    /// (indépendamment du toggle ShowPreReleases du launcher). Pour les mods sans track stable.</summary>
+    [JsonPropertyName("preRelease")] public bool PreRelease { get; set; }
 }
 
 /// <summary>Manifest local d'un mod installé : permet la désinstallation propre

@@ -8,7 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>PerAsperaLauncher</AssemblyName>
     <RootNamespace>PerAsperaLauncher</RootNamespace>
-    <Version>0.2.3</Version>
+    <Version>0.2.4</Version>
     <Authors>PerAsperaMods</Authors>
     <Product>Per Aspera Mod Launcher</Product>
     <Description>Installe et met a jour BepInEx, le SDK et les mods Per Aspera depuis l'org GitHub PerAsperaMods.</Description>
