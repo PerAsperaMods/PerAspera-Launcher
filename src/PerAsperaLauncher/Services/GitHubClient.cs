@@ -41,6 +41,21 @@ public static class GitHubClient
         return JsonSerializer.Deserialize<GitHubRelease>(json);
     }
 
+    /// <summary>Comme <see cref="GetLatestReleaseAsync(string)"/> mais inclut les pré-releases
+    /// quand <paramref name="includePreRelease"/> est vrai (liste /releases, premier élément).</summary>
+    public static async Task<GitHubRelease?> GetLatestReleaseAsync(string repo, bool includePreRelease)
+    {
+        if (!includePreRelease)
+            return await GetLatestReleaseAsync(repo);
+
+        // /releases retourne toutes les releases (pré + stable), la plus récente en premier
+        using var response = await Http.GetAsync($"https://api.github.com/repos/{repo}/releases");
+        if (!response.IsSuccessStatusCode) return null;
+        var json = await response.Content.ReadAsStringAsync();
+        var releases = JsonSerializer.Deserialize<List<GitHubRelease>>(json);
+        return releases?.FirstOrDefault();
+    }
+
     /// <summary>Télécharge un fichier avec progression (0-100).</summary>
     public static async Task DownloadFileAsync(string url, string destPath, IProgress<int>? progress = null)
     {

@@ -11,7 +11,7 @@ public sealed class MainViewModel : ObservableObject
 {
     private LauncherConfig _config = new();
     private string? _gamePath;
-    private string _statusMessage = "Initialisation…";
+    private string _statusMessage = "Loading…";
     private int _progressValue;
     private bool _progressVisible;
     private bool _bepInExInstalled;
@@ -19,6 +19,7 @@ public sealed class MainViewModel : ObservableObject
     private Version? _sdkInstalled;
     private Version? _sdkLatest;
     private GitHubRelease? _sdkLatestRelease;
+    private GitHubRelease? _launcherUpdate;
 
     public MainViewModel()
     {
@@ -33,6 +34,7 @@ public sealed class MainViewModel : ObservableObject
         UpdateAllCommand = new AsyncRelayCommand(UpdateAllAsync, () => GameFound);
         PlayCommand = new RelayCommand(Play, () => GameFound);
         RefreshCommand = new AsyncRelayCommand(LoadAsync);
+        OpenLauncherUpdateCommand = new RelayCommand(OpenLauncherUpdate);
     }
 
     public WorkspaceViewModel Workspace { get; }
@@ -46,6 +48,19 @@ public sealed class MainViewModel : ObservableObject
             _config.AdvancedMode = value;
             ConfigService.Save(_config);
             OnPropertyChanged();
+        }
+    }
+
+    public bool ShowPreReleases
+    {
+        get => _config.ShowPreReleases;
+        set
+        {
+            if (_config.ShowPreReleases == value) return;
+            _config.ShowPreReleases = value;
+            ConfigService.Save(_config);
+            OnPropertyChanged();
+            _ = LoadAsync();
         }
     }
 
@@ -66,7 +81,7 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public bool GameFound => GameLocator.IsValidGamePath(GamePath);
-    public string GamePathDisplay => GamePath ?? "Jeu introuvable — sélectionnez le dossier d'installation";
+    public string GamePathDisplay => GamePath ?? "Game not found — select install folder";
 
     public string StatusMessage { get => _statusMessage; set => SetField(ref _statusMessage, value); }
     public int ProgressValue { get => _progressValue; set => SetField(ref _progressValue, value); }
@@ -95,13 +110,13 @@ public sealed class MainViewModel : ObservableObject
     }
 
     public string BepInExStatus =>
-        !BepInExInstalled ? "Non installé"
-        : !HasInterop ? $"{BepInExInstaller.Version} — lancez le jeu une fois (génération interop)"
+        !BepInExInstalled ? "Not installed"
+        : !HasInterop ? $"{BepInExInstaller.Version} — launch the game once to generate interop"
         : $"{BepInExInstaller.Version} ✓";
 
     public string SdkStatus =>
         _sdkInstalled == null && _sdkLatest == null ? "—"
-        : _sdkInstalled == null ? $"Non installé (v{_sdkLatest} disponible)"
+        : _sdkInstalled == null ? $"Not installed (v{_sdkLatest} available)"
         : SdkUpdateAvailable ? $"v{_sdkInstalled} → v{_sdkLatest}"
         : $"v{_sdkInstalled} ✓";
 
@@ -110,12 +125,35 @@ public sealed class MainViewModel : ObservableObject
 
     public ObservableCollection<ModItemViewModel> Mods { get; } = new();
 
+    public GitHubRelease? LauncherUpdate
+    {
+        get => _launcherUpdate;
+        private set
+        {
+            if (SetField(ref _launcherUpdate, value))
+            {
+                OnPropertyChanged(nameof(LauncherUpdateVisible));
+                OnPropertyChanged(nameof(LauncherUpdateText));
+                OnPropertyChanged(nameof(CurrentVersionText));
+            }
+        }
+    }
+
+    public bool LauncherUpdateVisible => _launcherUpdate != null;
+
+    public string LauncherUpdateText => _launcherUpdate != null
+        ? $"Launcher update available: {_launcherUpdate.TagName}"
+        : "";
+
+    public string CurrentVersionText => $"v{LauncherUpdateService.GetCurrentVersion()}";
+
     public RelayCommand BrowseGameCommand { get; }
     public AsyncRelayCommand InstallBepInExCommand { get; }
     public AsyncRelayCommand InstallSdkCommand { get; }
     public AsyncRelayCommand UpdateAllCommand { get; }
     public RelayCommand PlayCommand { get; }
     public AsyncRelayCommand RefreshCommand { get; }
+    public RelayCommand OpenLauncherUpdateCommand { get; }
 
     // ----- Cycle de vie -----
 
@@ -140,16 +178,17 @@ public sealed class MainViewModel : ObservableObject
 
         if (!GameFound)
         {
-            StatusMessage = "Sélectionnez le dossier d'installation de Per Aspera.";
+            StatusMessage = "Select Per Aspera install folder.";
             return;
         }
 
-        // 2) État distant : SDK + registry + dernière release par mod
-        StatusMessage = "Vérification des mises à jour…";
+        // 2) Remote state: SDK + registry + latest release per mod + launcher check
+        StatusMessage = "Checking for updates…";
         try
         {
             var sdkTask = SdkManager.GetLatestAsync();
             var registryTask = GitHubClient.GetRegistryAsync();
+            var launcherUpdateTask = LauncherUpdateService.CheckForUpdateAsync();
 
             var sdk = await sdkTask;
             _sdkLatest = sdk?.Version;
@@ -169,13 +208,15 @@ public sealed class MainViewModel : ObservableObject
             }
 
             // Releases en parallèle (peu de mods, API anonyme suffisante)
-            await Task.WhenAll(Mods.Select(async m => m.LatestRelease = await ModManager.GetLatestAsync(m.Entry)));
+            await Task.WhenAll(Mods.Select(async m => m.LatestRelease = await ModManager.GetLatestAsync(m.Entry, ShowPreReleases)));
 
-            StatusMessage = "Prêt.";
+            LauncherUpdate = await launcherUpdateTask;
+
+            StatusMessage = "Ready.";
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Hors-ligne ou erreur réseau : {ex.Message}";
+            StatusMessage = $"Offline or network error: {ex.Message}";
         }
         RaiseAllCanExecute();
     }
@@ -193,6 +234,7 @@ public sealed class MainViewModel : ObservableObject
             BepInExInstalled = BepInExInstaller.IsInstalled(GamePath!);
             HasInterop = BepInExInstaller.HasInterop(GamePath!);
             _sdkInstalled = SdkManager.GetInstalledVersion(GamePath!);
+            if (BepInExInstalled) BepInExInstaller.ApplyDoorstopFix(GamePath!);
         }
         OnPropertyChanged(nameof(SdkStatus));
         OnPropertyChanged(nameof(SdkUpdateAvailable));
@@ -200,17 +242,20 @@ public sealed class MainViewModel : ObservableObject
 
     // ----- Actions -----
 
+    private void OpenLauncherUpdate()
+        => Process.Start(new ProcessStartInfo(LauncherUpdateService.ReleasesPageUrl) { UseShellExecute = true });
+
     private void BrowseGame()
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Title = "Dossier d'installation de Per Aspera (contient 'Per Aspera.exe')"
+            Title = "Per Aspera install folder (containing 'Per Aspera.exe')"
         };
         if (dialog.ShowDialog() != true) return;
 
         if (!GameLocator.IsValidGamePath(dialog.FolderName))
         {
-            StatusMessage = $"'{GameLocator.GameExeName}' introuvable dans ce dossier.";
+            StatusMessage = $"'{GameLocator.GameExeName}' not found in this folder.";
             return;
         }
         _config.GamePath = dialog.FolderName;
@@ -221,22 +266,22 @@ public sealed class MainViewModel : ObservableObject
 
     private async Task InstallBepInExAsync()
     {
-        await RunWithProgress("Téléchargement de BepInEx…", async p =>
+        await RunWithProgress("Downloading BepInEx…", async p =>
         {
             await BepInExInstaller.InstallAsync(GamePath!, p);
             RefreshLocalState();
-            StatusMessage = "BepInEx installé. Lancez le jeu une fois pour générer l'interop.";
+            StatusMessage = "BepInEx installed. Launch the game once to generate interop.";
         });
     }
 
     private async Task InstallSdkAsync()
     {
         if (_sdkLatestRelease == null) return;
-        await RunWithProgress($"Téléchargement du SDK {_sdkLatestRelease.TagName}…", async p =>
+        await RunWithProgress($"Downloading SDK {_sdkLatestRelease.TagName}…", async p =>
         {
             await SdkManager.InstallAsync(GamePath!, _sdkLatestRelease, p);
             RefreshLocalState();
-            StatusMessage = $"SDK {_sdkLatestRelease.TagName} installé.";
+            StatusMessage = $"SDK {_sdkLatestRelease.TagName} installed.";
         });
     }
 
@@ -244,33 +289,33 @@ public sealed class MainViewModel : ObservableObject
     {
         if (item.LatestRelease == null) return;
 
-        // Dépendance SDK : installer/mettre à jour le SDK d'abord si requis
+        // SDK dependency: install/update SDK first if required
         if (item.Entry.SdkMinVersion != null && Version.TryParse(item.Entry.SdkMinVersion, out var min)
             && (_sdkInstalled == null || _sdkInstalled < min))
         {
             if (_sdkLatestRelease == null || _sdkLatest == null || _sdkLatest < min)
             {
-                StatusMessage = $"{item.Name} requiert le SDK ≥ {min}, indisponible.";
+                StatusMessage = $"{item.Name} requires SDK ≥ {min}, unavailable.";
                 return;
             }
             await InstallSdkAsync();
         }
 
-        await RunWithProgress($"Installation de {item.Name} {item.LatestRelease.TagName}…", async p =>
+        await RunWithProgress($"Installing {item.Name} {item.LatestRelease.TagName}…", async p =>
         {
             await ModManager.InstallAsync(GamePath!, item.Entry, item.LatestRelease, p);
             item.InstalledVersion = ModManager.GetInstalledVersion(GamePath!, item.Entry.Id);
-            StatusMessage = $"{item.Name} {item.LatestRelease.TagName} installé.";
+            StatusMessage = $"{item.Name} {item.LatestRelease.TagName} installed.";
         });
     }
 
     internal async Task UninstallModAsync(ModItemViewModel item)
     {
-        await RunWithProgress($"Désinstallation de {item.Name}…", p =>
+        await RunWithProgress($"Uninstalling {item.Name}…", p =>
         {
             ModManager.Uninstall(GamePath!, item.Entry.Id);
             item.InstalledVersion = null;
-            StatusMessage = $"{item.Name} désinstallé.";
+            StatusMessage = $"{item.Name} uninstalled.";
             return Task.CompletedTask;
         });
     }
@@ -281,7 +326,7 @@ public sealed class MainViewModel : ObservableObject
         if (SdkUpdateAvailable) await InstallSdkAsync();
         foreach (var mod in Mods.Where(m => m.HasUpdate))
             await InstallModAsync(mod);
-        StatusMessage = "Tout est à jour.";
+        StatusMessage = "Everything is up to date.";
     }
 
     private void Play()
@@ -296,17 +341,17 @@ public sealed class MainViewModel : ObservableObject
             Process.Start(new ProcessStartInfo(Path.Combine(GamePath!, GameLocator.GameExeName)) { UseShellExecute = true });
         }
 
-        // Premier lancement : surveiller l'apparition de l'interop en arrière-plan
+        // First launch: watch for interop generation in the background
         if (BepInExInstalled && !HasInterop)
         {
-            StatusMessage = "Jeu lancé — génération de l'interop en cours (1 à 3 min)…";
+            StatusMessage = "Game launched — generating interop (1-3 min)…";
             _ = Task.Run(async () =>
             {
                 var ok = await BepInExInstaller.WaitForInteropAsync(GamePath!, TimeSpan.FromMinutes(10));
                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                 {
                     RefreshLocalState();
-                    if (ok) StatusMessage = "Interop générée — l'environnement de modding est prêt.";
+                    if (ok) StatusMessage = "Interop generated — mod environment is ready.";
                 });
             });
         }
@@ -324,7 +369,7 @@ public sealed class MainViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Erreur : {ex.Message}";
+            StatusMessage = $"Error: {ex.Message}";
         }
         finally
         {

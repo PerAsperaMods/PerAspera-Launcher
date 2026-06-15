@@ -7,6 +7,7 @@ public sealed class LauncherConfig
 {
     public string? GamePath { get; set; }
     public bool AdvancedMode { get; set; }
+    public bool ShowPreReleases { get; set; }
     public string? LastWorkspacePath { get; set; }
 }
 
@@ -51,6 +52,7 @@ public sealed class InstallManifest
 public sealed class GitHubRelease
 {
     [JsonPropertyName("tag_name")] public string TagName { get; set; } = "";
+    [JsonPropertyName("prerelease")] public bool Prerelease { get; set; }
     [JsonPropertyName("assets")] public List<GitHubAsset> Assets { get; set; } = new();
 }
 

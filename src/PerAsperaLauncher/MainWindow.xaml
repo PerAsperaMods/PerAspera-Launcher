@@ -1,7 +1,7 @@
 <Window x:Class="PerAsperaLauncher.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Per Aspera Mod Launcher"
+        Title="Per Aspera — Mod Launcher"
         Width="780" Height="620" MinWidth="640" MinHeight="500"
         Background="{StaticResource BgBrush}"
         WindowStartupLocation="CenterScreen">
@@ -59,23 +59,46 @@
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>   <!-- titre + toggle avancé -->
+            <RowDefinition Height="Auto"/>   <!-- bannière update launcher -->
             <RowDefinition Height="*"/>      <!-- TabControl -->
             <RowDefinition Height="Auto"/>   <!-- footer : Update + Jouer -->
         </Grid.RowDefinitions>
 
         <!-- ═══ En-tête ════════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Margin="0,0,0,12">
-            <TextBlock Text="PER ASPERA — MOD LAUNCHER"
-                       FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"
-                       VerticalAlignment="Center"/>
-            <CheckBox HorizontalAlignment="Right" VerticalAlignment="Center"
-                      Content="Mode développeur"
-                      Foreground="{StaticResource TextDimBrush}"
-                      IsChecked="{Binding AdvancedMode}"/>
+        <Grid Grid.Row="0" Margin="0,0,0,8">
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="PER ASPERA — MOD LAUNCHER"
+                           FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
+                <TextBlock Text="{Binding CurrentVersionText}" FontSize="11"
+                           Foreground="{StaticResource TextDimBrush}" Margin="2,1,0,0"/>
+            </StackPanel>
+            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Orientation="Horizontal">
+                <CheckBox Content="Pre-releases" Foreground="{StaticResource TextDimBrush}"
+                          IsChecked="{Binding ShowPreReleases}" Margin="0,0,16,0"
+                          ToolTip="Include pre-release versions in the mod list (for testers)"/>
+                <CheckBox Content="Developer mode" Foreground="{StaticResource TextDimBrush}"
+                          IsChecked="{Binding AdvancedMode}"/>
+            </StackPanel>
         </Grid>
 
+        <!-- ═══ Bannière update launcher ════════════════════════════════════════ -->
+        <Border Grid.Row="1" Background="#7B4A00" CornerRadius="4" Padding="10,6" Margin="0,0,0,8"
+                Visibility="{Binding LauncherUpdateVisible, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding LauncherUpdateText}"
+                           Foreground="{StaticResource WarnBrush}" VerticalAlignment="Center"
+                           FontWeight="SemiBold"/>
+                <Button Grid.Column="1" Content="Download" Style="{StaticResource ActionButton}"
+                        Command="{Binding OpenLauncherUpdateCommand}" Margin="12,0,0,0"/>
+            </Grid>
+        </Border>
+
         <!-- ═══ Onglets ═════════════════════════════════════════════════════════ -->
-        <TabControl Grid.Row="1">
+        <TabControl Grid.Row="2">
 
             <!-- ─── Onglet Mods ─────────────────────────────────────────────── -->
             <TabItem Header="Mods">
@@ -102,29 +125,29 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
-                            <!-- Jeu -->
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Jeu" Style="{StaticResource DimText}" Margin="0,4"/>
+                            <!-- Game -->
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Game" Style="{StaticResource DimText}" Margin="0,4"/>
                             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding GamePathDisplay}" Margin="0,4"
                                        TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                            <Button Grid.Row="0" Grid.Column="2" Content="Parcourir…" Style="{StaticResource ActionButton}"
+                            <Button Grid.Row="0" Grid.Column="2" Content="Browse…" Style="{StaticResource ActionButton}"
                                     Command="{Binding BrowseGameCommand}" Margin="8,2"/>
 
                             <!-- BepInEx -->
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="BepInEx" Style="{StaticResource DimText}" Margin="0,4"/>
                             <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BepInExStatus}" Margin="0,4" VerticalAlignment="Center"/>
-                            <Button Grid.Row="1" Grid.Column="2" Content="Installer" Style="{StaticResource ActionButton}"
+                            <Button Grid.Row="1" Grid.Column="2" Content="Install" Style="{StaticResource ActionButton}"
                                     Command="{Binding InstallBepInExCommand}" Margin="8,2"/>
 
                             <!-- SDK -->
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="SDK" Style="{StaticResource DimText}" Margin="0,4"/>
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding SdkStatus}" Margin="0,4" VerticalAlignment="Center"/>
-                            <Button Grid.Row="2" Grid.Column="2" Content="Installer / MAJ" Style="{StaticResource ActionButton}"
+                            <Button Grid.Row="2" Grid.Column="2" Content="Install / Update" Style="{StaticResource ActionButton}"
                                     Command="{Binding InstallSdkCommand}" Margin="8,2"/>
                         </Grid>
                     </Border>
 
-                    <!-- Entête liste mods -->
-                    <TextBlock Grid.Row="1" Text="MODS DISPONIBLES" FontWeight="SemiBold"
+                    <!-- Mod list header -->
+                    <TextBlock Grid.Row="1" Text="AVAILABLE MODS" FontWeight="SemiBold"
                                Foreground="{StaticResource TextDimBrush}" Margin="2,0,0,6"/>
 
                     <!-- Liste mods -->
@@ -150,6 +173,11 @@
                                                             <TextBlock Text="{Binding TypeBadge}" FontSize="10"
                                                                        Foreground="{StaticResource WarnBrush}"/>
                                                         </Border>
+                                                        <Border Background="#7B2D8B" CornerRadius="3" Padding="5,1"
+                                                                Margin="4,0,0,0" VerticalAlignment="Center"
+                                                                Visibility="{Binding IsPreRelease, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="PRE" FontSize="10" Foreground="#E0AAFF"/>
+                                                        </Border>
                                                     </StackPanel>
                                                     <TextBlock Text="{Binding Description}" Style="{StaticResource DimText}"
                                                                FontSize="12" TextWrapping="Wrap" Margin="0,3,8,0"/>
@@ -161,7 +189,7 @@
                                                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                                     <Button Content="{Binding InstallButtonText}" Style="{StaticResource PrimaryButton}"
                                                             Command="{Binding InstallCommand}" Margin="4,0"/>
-                                                    <Button Content="✕" Style="{StaticResource ActionButton}" ToolTip="Désinstaller"
+                                                    <Button Content="✕" Style="{StaticResource ActionButton}" ToolTip="Uninstall"
                                                             Command="{Binding UninstallCommand}" Margin="4,0" Padding="8,5"/>
                                                 </StackPanel>
                                             </Grid>
@@ -188,8 +216,8 @@
                 </Grid>
             </TabItem>
 
-            <!-- ─── Onglet Développeur ───────────────────────────────────────── -->
-            <TabItem Header="Développeur"
+            <!-- ─── Developer tab ───────────────────────────────────────── -->
+            <TabItem Header="Developer"
                      Visibility="{Binding AdvancedMode, Converter={StaticResource BoolToVis}}">
                 <Grid Margin="0,8,0,0">
                     <Grid.RowDefinitions>
@@ -203,7 +231,7 @@
                     <Border Grid.Row="0" Background="{StaticResource PanelBrush}" CornerRadius="6"
                             Padding="12" Margin="0,0,0,12">
                         <StackPanel>
-                            <TextBlock Text="WORKSPACE CLAUDE CODE" FontWeight="SemiBold"
+                            <TextBlock Text="CLAUDE CODE WORKSPACE" FontWeight="SemiBold"
                                        Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,10"/>
 
                             <!-- Chemin workspace -->
@@ -214,40 +242,40 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox Grid.Column="0" Style="{StaticResource DevTextBox}"
                                          Text="{Binding Workspace.WorkspacePath, UpdateSourceTrigger=PropertyChanged}"/>
-                                <Button Grid.Column="1" Content="Parcourir…" Style="{StaticResource ActionButton}"
+                                <Button Grid.Column="1" Content="Browse…" Style="{StaticResource ActionButton}"
                                         Command="{Binding Workspace.BrowseWorkspaceCommand}" Margin="6,0,0,0"/>
                             </Grid>
 
                             <!-- Actions workspace -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <Button Content="Initialiser le workspace" Style="{StaticResource PrimaryButton}"
+                                <Button Content="Initialize workspace" Style="{StaticResource PrimaryButton}"
                                         Command="{Binding Workspace.InitWorkspaceCommand}"
                                         Padding="14,7" Margin="0,0,8,0"/>
-                                <Button Content="Mettre à jour les skills" Style="{StaticResource ActionButton}"
+                                <Button Content="Update skills" Style="{StaticResource ActionButton}"
                                         Command="{Binding Workspace.UpdateSkillsCommand}" Padding="14,7"/>
                             </StackPanel>
 
                             <TextBlock Style="{StaticResource DimText}" FontSize="11" TextWrapping="Wrap">
-                                Installe .claude/skills/ + .claude/agents/ depuis PerAsperaMods/per-aspera-skills.
-                                Fonctionne dans VSCode, CLI et l'app desktop Claude Code.
+                                Installs .claude/skills/ + .claude/agents/ from PerAsperaMods/per-aspera-skills.
+                                Works in VSCode, CLI and the Claude Code desktop app.
                             </TextBlock>
                         </StackPanel>
                     </Border>
 
-                    <!-- === Nouveau mod === -->
+                    <!-- === New mod === -->
                     <Border Grid.Row="1" Background="{StaticResource PanelBrush}" CornerRadius="6"
                             Padding="12">
                         <StackPanel>
-                            <TextBlock Text="NOUVEAU MOD" FontWeight="SemiBold"
+                            <TextBlock Text="NEW MOD" FontWeight="SemiBold"
                                        Foreground="{StaticResource TextDimBrush}" Margin="0,0,0,10"/>
 
-                            <!-- ID du mod -->
+                            <!-- Mod ID -->
                             <Grid Margin="0,0,0,10">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="90"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="ID du mod" Style="{StaticResource DimText}"
+                                <TextBlock Grid.Column="0" Text="Mod ID" Style="{StaticResource DimText}"
                                            VerticalAlignment="Center"/>
                                 <TextBox Grid.Column="1" Style="{StaticResource DevTextBox}"
                                          Text="{Binding Workspace.ModIdInput, UpdateSourceTrigger=PropertyChanged}"/>
@@ -262,7 +290,7 @@
                             </StackPanel>
 
                             <TextBlock Style="{StaticResource DimText}" FontSize="11" TextWrapping="Wrap">
-                                Plugin C# : télécharge aussi le SDK modder-pack dans lib/SDK/ (compilation immédiate sans config manuelle).
+                                C# Plugin: also downloads the SDK modder-pack to lib/SDK/ (compile immediately without manual setup).
                             </TextBlock>
                         </StackPanel>
                     </Border>
@@ -286,15 +314,15 @@
         </TabControl>
 
         <!-- ═══ Footer ══════════════════════════════════════════════════════════ -->
-        <Grid Grid.Row="2" Margin="0,12,0,0">
+        <Grid Grid.Row="3" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Content="Tout mettre à jour" Style="{StaticResource ActionButton}"
+            <Button Grid.Column="0" Content="Update all" Style="{StaticResource ActionButton}"
                     Command="{Binding UpdateAllCommand}" Padding="14,8"/>
-            <Button Grid.Column="2" Content="▶  JOUER" Style="{StaticResource PrimaryButton}"
+            <Button Grid.Column="2" Content="▶  PLAY" Style="{StaticResource PrimaryButton}"
                     Command="{Binding PlayCommand}" Padding="28,8" FontSize="15"/>
         </Grid>
     </Grid>

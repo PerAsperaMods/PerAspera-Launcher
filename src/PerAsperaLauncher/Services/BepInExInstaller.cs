@@ -27,6 +27,20 @@ public static class BepInExInstaller
         await GitHubClient.DownloadFileAsync(DownloadUrl, tmp, progress);
         ArchiveInstaller.ExtractToGameRoot(tmp, gamePath);
         File.Delete(tmp);
+        ApplyDoorstopFix(gamePath);
+    }
+
+    /// <summary>
+    /// Doorstop 4.5.0 : winhttp.dll intercepte les appels WinHTTP du jeu sans les forwarder
+    /// correctement → "no internet connection" en multijoueur. version.dll proxy le même
+    /// Doorstop sans toucher à la stack réseau.
+    /// </summary>
+    public static void ApplyDoorstopFix(string gamePath)
+    {
+        var winhttp = Path.Combine(gamePath, "winhttp.dll");
+        var version = Path.Combine(gamePath, "version.dll");
+        if (File.Exists(winhttp) && !File.Exists(version))
+            File.Move(winhttp, version);
     }
 
     /// <summary>

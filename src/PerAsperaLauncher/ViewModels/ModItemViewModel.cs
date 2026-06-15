@@ -41,16 +41,17 @@ public sealed class ModItemViewModel : ObservableObject
     }
 
     public string LatestVersion => LatestRelease?.TagName ?? "—";
+    public bool IsPreRelease => LatestRelease?.Prerelease == true;
     public bool IsInstalled => InstalledVersion != null;
     public bool HasUpdate => IsInstalled && LatestRelease != null && InstalledVersion != LatestRelease.TagName;
     public bool CanInstall => LatestRelease != null && (!IsInstalled || HasUpdate);
 
     public string StatusText =>
-        !IsInstalled ? "Non installé"
+        !IsInstalled ? "Not installed"
         : HasUpdate ? $"{InstalledVersion} → {LatestVersion}"
         : $"{InstalledVersion} ✓";
 
-    public string InstallButtonText => HasUpdate ? "Mettre à jour" : "Installer";
+    public string InstallButtonText => HasUpdate ? "Update" : "Install";
 
     public AsyncRelayCommand InstallCommand { get; }
     public AsyncRelayCommand UninstallCommand { get; }
@@ -58,6 +59,7 @@ public sealed class ModItemViewModel : ObservableObject
     private void RefreshDerived()
     {
         OnPropertyChanged(nameof(LatestVersion));
+        OnPropertyChanged(nameof(IsPreRelease));
         OnPropertyChanged(nameof(IsInstalled));
         OnPropertyChanged(nameof(HasUpdate));
         OnPropertyChanged(nameof(CanInstall));

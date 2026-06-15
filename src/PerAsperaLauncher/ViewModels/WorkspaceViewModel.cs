@@ -80,7 +80,7 @@ public sealed class WorkspaceViewModel : ObservableObject
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog
         {
-            Title = "Dossier workspace Per Aspera (dossier de modding Claude)"
+            Title = "Per Aspera workspace folder (Claude modding directory)"
         };
         if (dialog.ShowDialog() != true) return;
         WorkspacePath = dialog.FolderName;
@@ -88,40 +88,40 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     private async Task InitWorkspaceAsync()
     {
-        await RunWithProgress("Initialisation du workspace…", async p =>
+        await RunWithProgress("Initializing workspace…", async p =>
         {
             await WorkspaceService.InitWorkspaceAsync(_workspacePath, _getGamePath(), p);
             RaiseAllCanExecute();
-            StatusMessage = "Workspace initialisé — skills et agents Claude installés.";
+            StatusMessage = "Workspace initialized — Claude skills and agents installed.";
         });
     }
 
     private async Task UpdateSkillsAsync()
     {
-        await RunWithProgress("Mise à jour des skills…", async p =>
+        await RunWithProgress("Updating skills…", async p =>
         {
             await WorkspaceService.UpdateSkillsAsync(_workspacePath, p);
-            StatusMessage = "Skills et agents mis à jour.";
+            StatusMessage = "Skills and agents updated.";
         });
     }
 
     private async Task NewYamlModAsync()
     {
         var modId = _modIdInput.Trim();
-        await RunWithProgress($"Création du mod YAML '{modId}'…", async p =>
+        await RunWithProgress($"Creating YAML mod '{modId}'…", async p =>
         {
             await WorkspaceService.CreateYamlModAsync(_workspacePath, modId, p);
-            StatusMessage = $"Mod YAML '{modId}' créé dans {Path.Combine(_workspacePath, modId)}";
+            StatusMessage = $"YAML mod '{modId}' created in {Path.Combine(_workspacePath, modId)}";
         });
     }
 
     private async Task NewCSharpModAsync()
     {
         var modId = _modIdInput.Trim();
-        await RunWithProgress($"Création du plugin C# '{modId}' + SDK…", async p =>
+        await RunWithProgress($"Creating C# plugin '{modId}' + SDK…", async p =>
         {
             await WorkspaceService.CreateCSharpModAsync(_workspacePath, modId, p);
-            StatusMessage = $"Plugin C# '{modId}' créé dans {Path.Combine(_workspacePath, modId)}";
+            StatusMessage = $"C# plugin '{modId}' created in {Path.Combine(_workspacePath, modId)}";
         });
     }
 
@@ -138,7 +138,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         }
         catch (Exception ex)
         {
-            StatusMessage = $"Erreur : {ex.Message}";
+            StatusMessage = $"Error: {ex.Message}";
         }
         finally
         {

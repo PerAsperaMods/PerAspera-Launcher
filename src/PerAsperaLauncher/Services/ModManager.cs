@@ -29,8 +29,8 @@ public static class ModManager
         return manifest.Version;
     }
 
-    public static async Task<GitHubRelease?> GetLatestAsync(ModEntry mod)
-        => await GitHubClient.GetLatestReleaseAsync(mod.Repo);
+    public static async Task<GitHubRelease?> GetLatestAsync(ModEntry mod, bool includePreRelease = false)
+        => await GitHubClient.GetLatestReleaseAsync(mod.Repo, includePreRelease);
 
     public static async Task InstallAsync(string gamePath, ModEntry mod, GitHubRelease release,
         IProgress<int>? progress = null)
